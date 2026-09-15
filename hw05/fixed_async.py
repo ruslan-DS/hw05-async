@@ -56,6 +56,7 @@ async def fetch_user_posts(user_id: int) -> list[dict]:
 # Файловые операции
 # ---------------------------------------------------------------------------
 
+
 async def save_to_file(data: dict | list, filepath: str) -> None:
     """Сохраняет данные в JSON-файл."""
     # build-in в Python open() и запись через f.write — синхронные
@@ -82,6 +83,7 @@ async def compute_statistics(users: list[dict]) -> dict:
 
     Имитирует тяжёлые вычисления (агрегация, нормализация).
     """
+
     def _heavy_checksum(n: int = 10_000_000) -> int:
         """Имитация тяжёлых вычислений (синхронная CPU-bound функция)."""
         total = 0
