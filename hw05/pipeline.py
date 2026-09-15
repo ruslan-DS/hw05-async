@@ -3,6 +3,8 @@
 from collections.abc import AsyncIterator
 from pathlib import Path
 
+import aiofiles
+
 # Конфигурация вариантов: формат входных данных
 VARIANT_SOURCES = {
     0: "server_log",  # [2024-01-15 10:23:45] ERROR: Connection timeout
@@ -21,9 +23,9 @@ async def read_chunks(path: str | Path, chunk_size: int = 8192) -> AsyncIterator
     Yields:
         bytes — очередной чанк данных
     """
-    # TODO: реализуй асинхронное чтение файла чанками (aiofiles)
-    raise NotImplementedError("Реализуй read_chunks")
-    yield  # noqa: RET503 — нужен для типизации AsyncIterator
+    async with aiofiles.open(path, "rb") as f:
+        while chunk := await f.read(chunk_size):
+            yield chunk
 
 
 async def parse_lines(chunks: AsyncIterator[bytes]) -> AsyncIterator[str]:
@@ -38,9 +40,15 @@ async def parse_lines(chunks: AsyncIterator[bytes]) -> AsyncIterator[str]:
     Yields:
         str — очередная полная строка (без \\n)
     """
-    # TODO: реализуй сборку строк из чанков
-    raise NotImplementedError("Реализуй parse_lines")
-    yield  # noqa: RET503
+    buffer = b""
+    async for chunk in chunks:
+        buffer += chunk
+        # всё до последнего "\n" — готовые строки, хвост после него — в буфер
+        *lines, buffer = buffer.split(b"\n")
+        for line in lines:
+            yield line.decode("utf-8")
+    if buffer:  # файл без завершающего "\n"
+        yield buffer.decode("utf-8")
 
 
 async def filter_lines(lines: AsyncIterator[str], pattern: str) -> AsyncIterator[str]:
@@ -53,9 +61,9 @@ async def filter_lines(lines: AsyncIterator[str], pattern: str) -> AsyncIterator
     Yields:
         str — строки, содержащие pattern
     """
-    # TODO: реализуй фильтрацию строк
-    raise NotImplementedError("Реализуй filter_lines")
-    yield  # noqa: RET503
+    async for line in lines:
+        if pattern in line:
+            yield line
 
 
 async def batch(items: AsyncIterator[str], size: int) -> AsyncIterator[list[str]]:
@@ -70,6 +78,11 @@ async def batch(items: AsyncIterator[str], size: int) -> AsyncIterator[list[str]
     Yields:
         list[str] — очередной батч элементов
     """
-    # TODO: реализуй группировку в батчи
-    raise NotImplementedError("Реализуй batch")
-    yield  # noqa: RET503
+    current: list[str] = []
+    async for item in items:
+        current.append(item)
+        if len(current) == size:
+            yield current
+            current = []
+    if current:
+        yield current
